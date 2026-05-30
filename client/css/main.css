@@ -1,0 +1,176 @@
+/* ═══════════════════════════════════════════════════════════════
+   VirtualGamepadControl — Shared Design System
+   Font: Outfit (Google Fonts)
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ── Design tokens ────────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --bg-deep:    #07070f;
+  --bg-surface: #0f0f1e;
+  --bg-elevated:#181828;
+  --bg-card:    #1d1d30;
+  --bg-glass:   rgba(20, 20, 40, 0.75);
+
+  /* Brand */
+  --primary:      #7c6df5;
+  --primary-glow: rgba(124, 109, 245, 0.35);
+  --primary-dim:  rgba(124, 109, 245, 0.15);
+  --accent:       #00d4ff;
+  --accent-glow:  rgba(0, 212, 255, 0.3);
+
+  /* Xbox face-button colours */
+  --xbox-a: #00c853;
+  --xbox-b: #ff1744;
+  --xbox-x: #2979ff;
+  --xbox-y: #ffd600;
+
+  /* Text */
+  --t1: #eeeeff;
+  --t2: rgba(238,238,255,.65);
+  --t3: rgba(238,238,255,.35);
+
+  /* Borders */
+  --border:        rgba(255,255,255,.08);
+  --border-active: rgba(124,109,245,.5);
+
+  /* Radii */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+  --r-circle: 50%;
+
+  /* Shadows / glows */
+  --shadow-card:  0 8px 40px rgba(0,0,0,.5);
+  --glow-primary: 0 0 30px var(--primary-glow);
+  --glow-accent:  0 0 30px var(--accent-glow);
+}
+
+/* ── Reset ────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0; padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg-deep);
+  color: var(--t1);
+  font-family: 'Outfit', system-ui, sans-serif;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Ambient background gradient */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 90% 60% at 15% 5%,  rgba(124,109,245,.10) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 95%,  rgba(0,212,255,.07) 0%, transparent 55%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Typography ───────────────────────────────────────────────── */
+h1 { font-size: clamp(1.7rem, 5vw, 3rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.1; }
+h2 { font-size: clamp(1.1rem, 3vw, 1.7rem); font-weight: 700; letter-spacing: -.01em; }
+h3 { font-size: 1rem; font-weight: 600; }
+p  { font-size: .9rem; color: var(--t2); line-height: 1.55; }
+small { font-size: .78rem; color: var(--t3); }
+
+/* ── Glass card ───────────────────────────────────────────────── */
+.card {
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── Badge ────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .25rem .75rem;
+  border-radius: var(--r-pill);
+  font-size: .7rem; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.badge-primary { background: var(--primary-dim);          color: var(--primary); border: 1px solid rgba(124,109,245,.3); }
+.badge-success { background: rgba(0,200,83,.13);           color: #00e676;        border: 1px solid rgba(0,200,83,.3); }
+.badge-danger  { background: rgba(255,23,68,.13);          color: #ff5252;        border: 1px solid rgba(255,23,68,.3); }
+.badge-warning { background: rgba(255,214,0,.13);          color: #ffd600;        border: 1px solid rgba(255,214,0,.3); }
+.badge-info    { background: rgba(0,212,255,.13);          color: var(--accent);  border: 1px solid rgba(0,212,255,.3); }
+
+/* ── Pulse dot ────────────────────────────────────────────────── */
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: pulse-dot 2.2s ease-in-out infinite;
+}
+.dot.green  { background: #00e676; box-shadow: 0 0 6px #00e676; }
+.dot.red    { background: #ff5252; box-shadow: 0 0 6px #ff5252; }
+.dot.yellow { background: #ffd600; box-shadow: 0 0 6px #ffd600; }
+.dot.blue   { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+
+@keyframes pulse-dot {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:.4; transform:scale(.8); }
+}
+
+/* ── Primary button ───────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  padding: .8rem 1.6rem;
+  border: none; border-radius: var(--r-md);
+  font-family: inherit; font-size: .95rem; font-weight: 700;
+  cursor: pointer; outline: none;
+  transition: transform .15s, box-shadow .15s, filter .15s;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), #5e52d0);
+  color: #fff;
+  box-shadow: 0 4px 22px rgba(124,109,245,.45);
+}
+.btn-primary:hover  { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(124,109,245,.65); }
+.btn-primary:active { transform: scale(.97); }
+.btn-ghost {
+  background: rgba(255,255,255,.06);
+  color: var(--t2);
+  border: 1px solid var(--border);
+}
+
+/* ── Animations ───────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(14px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity:0; transform:scale(.94); }
+  to   { opacity:1; transform:scale(1); }
+}
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+@keyframes glow-pulse {
+  0%,100% { opacity:.4; }
+  50%      { opacity:.9; }
+}
+
+.anim-fadeup  { animation: fadeUp  .45s cubic-bezier(.25,.8,.25,1) forwards; }
+.anim-scalein { animation: scaleIn .35s cubic-bezier(.25,.8,.25,1) forwards; }
+
+/* ── Scrollbar ────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 2px; }

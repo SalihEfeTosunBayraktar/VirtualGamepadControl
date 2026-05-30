@@ -1,0 +1,6 @@
+@echo off
+title VirtualGamepadControl
+chcp 65001 > nul
+cd /d "%~dp0"
+node server\index.js
+pause

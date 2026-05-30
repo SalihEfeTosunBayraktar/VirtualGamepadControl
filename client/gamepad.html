@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#07070f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>VirtualGamepad — Controller</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/gamepad.css">
+</head>
+<body>
+
+  <!-- ── Rotate prompt (shown in portrait mode) ──────────────────────────── -->
+  <div id="rotate-prompt">
+    <div class="rotate-icon">📱</div>
+    <h2>Telefonu yatay çevirin</h2>
+    <p>Kontrolör yatay modda çalışır</p>
+  </div>
+
+  <!-- ── Status bar ──────────────────────────────────────────────────────── -->
+  <div id="status-bar">
+    <div class="dot yellow" id="status-dot"></div>
+    <span id="status-text">Bağlanıyor…</span>
+    <span id="latency" class="latency"></span>
+    <span id="player-badge" class="player-badge" style="display:none">P?</span>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       XBOX LAYOUT  (default)
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div id="gamepad-root" class="layout-xbox">
+
+    <!-- Top bar: LT | LB | [VIEW·GUIDE·MENU] | RB | RT -->
+    <div class="top-bar">
+
+      <div class="trigger-zone" id="lt-zone" title="LT">
+        <div class="trigger-fill" id="lt-fill"></div>
+        <span class="trigger-label">LT</span>
+      </div>
+
+      <button class="bumper-btn" id="lb-btn">LB</button>
+
+      <div class="sys-buttons">
+        <button class="sys-btn" id="view-btn" title="View / Select">⧉</button>
+        <button class="sys-btn guide-btn" id="guide-btn" title="Guide">⬡</button>
+        <button class="sys-btn" id="menu-btn" title="Menu / Start">≡</button>
+      </div>
+
+      <button class="bumper-btn" id="rb-btn">RB</button>
+
+      <div class="trigger-zone" id="rt-zone" title="RT">
+        <div class="trigger-fill" id="rt-fill"></div>
+        <span class="trigger-label">RT</span>
+      </div>
+
+    </div>
+
+    <!-- Left area: DPad (top) + Left Stick (bottom) -->
+    <div class="left-area">
+      <div class="dpad" id="dpad">
+        <button class="dpad-btn dpad-up"    id="dpad-up">▲</button>
+        <button class="dpad-btn dpad-left"  id="dpad-left">◄</button>
+        <div    class="dpad-center"></div>
+        <button class="dpad-btn dpad-right" id="dpad-right">►</button>
+        <button class="dpad-btn dpad-down"  id="dpad-down">▼</button>
+      </div>
+
+      <div class="joystick-zone" id="left-stick">
+        <div class="joystick-thumb" id="left-thumb"></div>
+      </div>
+    </div>
+
+    <!-- Center spacer (holds nothing) -->
+    <div class="center-area"></div>
+
+    <!-- Right area: ABXY (top) + Right Stick (bottom) -->
+    <div class="right-area">
+      <div class="abxy" id="abxy">
+        <button class="face-btn btn-y" id="btn-y">Y</button>
+        <button class="face-btn btn-x" id="btn-x">X</button>
+        <button class="face-btn btn-b" id="btn-b">B</button>
+        <button class="face-btn btn-a" id="btn-a">A</button>
+      </div>
+
+      <div class="joystick-zone" id="right-stick">
+        <div class="joystick-thumb" id="right-thumb"></div>
+      </div>
+    </div>
+
+  </div><!-- /#gamepad-root -->
+
+  <!-- ── Layout switcher (floating bottom) ───────────────────────────────── -->
+  <div id="layout-switcher">
+    <button class="layout-tab active" data-layout="xbox">🎮 Xbox</button>
+    <button class="layout-tab"        data-layout="fps">🔫 FPS</button>
+    <button class="layout-tab"        data-layout="racing">🏎️ Yarış</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       FPS OVERLAY  (hidden until layout-fps)
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div id="fps-overlay" style="display:none; position:fixed; inset:0; z-index:50; pointer-events:none;">
+    <div class="fps-actions" style="pointer-events:all;">
+      <button class="fps-action-btn" id="fps-reload">🔄 Şarjör</button>
+      <button class="fps-action-btn" id="fps-crouch">⬇️ Çömel</button>
+      <button class="fps-action-btn" id="fps-jump">⬆️ Zıpla</button>
+      <button class="fps-action-btn" id="fps-melee">⚔️ Yakın</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       RACING OVERLAY  (hidden until layout-racing)
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div id="racing-overlay" style="display:none; position:fixed; inset:36px 0 0; z-index:50;">
+    <div class="racing-root">
+      <div>
+        <div class="steering-indicator" id="steering-indicator">
+          <div class="steering-center-mark"></div>
+          <div class="steering-bar" id="steering-bar"></div>
+        </div>
+        <div class="steering-label">📱 Telefonu eğerek yönlendirin</div>
+      </div>
+
+      <div class="racing-pedals">
+        <button class="pedal-btn handbrake" id="racing-hb">
+          <span class="pedal-icon">🅿️</span>El Freni
+        </button>
+        <button class="pedal-btn gas"   id="racing-gas">
+          <span class="pedal-icon">⚡</span>GAZ
+        </button>
+        <button class="pedal-btn brake" id="racing-brake">
+          <span class="pedal-icon">🛑</span>FREN
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scripts ─────────────────────────────────────────────────────────── -->
+  <script src="js/vibration.js"></script>
+  <script src="js/sensors.js"></script>
+  <script src="js/controls.js"></script>
+  <script src="js/connection.js"></script>
+
+  <script>
+  (() => {
+    'use strict';
+
+    // ── URL params ─────────────────────────────────────────────────────────
+    const params  = new URLSearchParams(window.location.search);
+    const name    = params.get('name')   || 'Oyuncu';
+    const device  = params.get('device') || 'Bilinmeyen';
+    let   layout  = params.get('layout') || 'xbox';
+
+    // ── DOM refs ────────────────────────────────────────────────────────────
+    const statusDot  = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const latencyEl  = document.getElementById('latency');
+    const playerBadge= document.getElementById('player-badge');
+    const steeringBar= document.getElementById('steering-bar');
+
+    // ── Controls wiring ─────────────────────────────────────────────────────
+    const { Joystick, Button, DPad, Trigger, getState } = window.VGC.Controls;
+
+    const leftStick  = new Joystick(
+      document.getElementById('left-stick'),
+      document.getElementById('left-thumb'), 'L', 'LS'
+    );
+    const rightStick = new Joystick(
+      document.getElementById('right-stick'),
+      document.getElementById('right-thumb'), 'R', 'RS'
+    );
+
+    new DPad({
+      up:    document.getElementById('dpad-up'),
+      down:  document.getElementById('dpad-down'),
+      left:  document.getElementById('dpad-left'),
+      right: document.getElementById('dpad-right')
+    });
+
+    new Trigger(document.getElementById('lt-zone'), document.getElementById('lt-fill'), 'LT');
+    new Trigger(document.getElementById('rt-zone'), document.getElementById('rt-fill'), 'RT');
+
+    [ ['btn-a','A'], ['btn-b','B'], ['btn-x','X'], ['btn-y','Y'],
+      ['lb-btn','LB'], ['rb-btn','RB'],
+      ['view-btn','SELECT'], ['menu-btn','START'], ['guide-btn','GUIDE']
+    ].forEach(([id, key]) => new Button(document.getElementById(id), key));
+
+    // FPS actions → mapped to face buttons
+    [ ['fps-reload','X'], ['fps-crouch','B'], ['fps-jump','A'], ['fps-melee','Y']
+    ].forEach(([id, key]) => {
+      const el = document.getElementById(id);
+      if (el) new Button(el, key);
+    });
+
+    // Racing pedals
+    [ ['racing-gas','RT'], ['racing-brake','LT'] ].forEach(([id, key]) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('touchstart',  e => { e.preventDefault(); el.classList.add('pressed'); }, { passive:false });
+      el.addEventListener('touchend',    e => { e.preventDefault(); el.classList.remove('pressed'); }, { passive:false });
+    });
+    const racingHb = document.getElementById('racing-hb');
+    if (racingHb) new Button(racingHb, 'A');
+
+    // ── Gyroscope (racing steering) ─────────────────────────────────────────
+    const { Sensors } = window.VGC;
+    let gyroEnabled = false;
+
+    async function enableGyro() {
+      const result = await Sensors.requestPermission();
+      if (result === 'granted') {
+        Sensors.start(({ gamma }) => {
+          if (layout !== 'racing') return;
+          const axis = Sensors.gammaToAxis(gamma, 40);
+          window.VGC.Controls.getState().axes.LX = axis; // direct state override
+          // Move steering bar visually
+          if (steeringBar) {
+            const pct = 50 + axis * 48;
+            steeringBar.style.left = `${pct}%`;
+          }
+        });
+        gyroEnabled = true;
+      }
+    }
+
+    // ── Layout switching ────────────────────────────────────────────────────
+    function applyLayout(l) {
+      layout = l;
+
+      // Update tab UI
+      document.querySelectorAll('.layout-tab').forEach(t =>
+        t.classList.toggle('active', t.dataset.layout === l)
+      );
+
+      // Show/hide overlays
+      document.getElementById('fps-overlay').style.display    = (l === 'fps')    ? '' : 'none';
+      document.getElementById('racing-overlay').style.display = (l === 'racing') ? '' : 'none';
+
+      // Racing needs gyro
+      if (l === 'racing' && !gyroEnabled) enableGyro();
+
+      // Show/hide gamepad root elements based on layout
+      const root = document.getElementById('gamepad-root');
+      root.style.opacity = (l === 'racing') ? '0.3' : '1';
+    }
+
+    document.querySelectorAll('.layout-tab').forEach(tab => {
+      tab.addEventListener('click', () => applyLayout(tab.dataset.layout));
+    });
+
+    applyLayout(layout);
+
+    // ── Connection ──────────────────────────────────────────────────────────
+    const { Connection } = window.VGC;
+
+    Connection.onConnected(pid => {
+      statusDot.className  = 'dot green';
+      statusText.textContent = `${name} — Bağlı`;
+      playerBadge.style.display = '';
+      playerBadge.textContent   = `P${pid}`;
+      window.VGC.Vibration.pulse(60);
+    });
+
+    Connection.onDisconnected(() => {
+      statusDot.className  = 'dot red';
+      statusText.textContent = 'Bağlantı kesildi — yeniden deneniyor…';
+      playerBadge.style.display = 'none';
+    });
+
+    Connection.onVibration((large, small) => {
+      window.VGC.Vibration.vibrate(large, small);
+    });
+
+    Connection.connect({ name, device });
+
+    // ── Input loop (60 fps) ─────────────────────────────────────────────────
+    let lastSendTime   = 0;
+    let pingTime       = 0;
+    const SEND_INTERVAL = 1000 / 60;   // ~16ms
+
+    function gameLoop(ts) {
+      if (ts - lastSendTime >= SEND_INTERVAL) {
+        lastSendTime = ts;
+        Connection.sendInput(getState());
+
+        // Simple latency display via ping-pong (approximation)
+        if (ts - pingTime > 1000) {
+          pingTime = ts;
+          // latency display is handled by ws round-trip approximation
+        }
+      }
+      requestAnimationFrame(gameLoop);
+    }
+    requestAnimationFrame(gameLoop);
+
+  })();
+  </script>
+</body>
+</html>

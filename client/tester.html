@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VirtualGamepad — Dashboard</title>
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    body { overflow-y: auto; }
+    .page {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem;
+    }
+
+    /* ── Header ──────────────────────────────────────────────────────── */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;
+    }
+    .header-title { display: flex; align-items: center; gap: .75rem; }
+    .header h1 { font-size: 1.5rem; font-weight: 800; }
+    .server-badges { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+    /* ── Grid ────────────────────────────────────────────────────────── */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    @media (max-width: 640px) { .dashboard-grid { grid-template-columns: 1fr; } }
+    .full-width { grid-column: 1 / -1; }
+
+    /* ── Section card ─────────────────────────────────────────────────  */
+    .section-title {
+      font-size: .72rem; font-weight: 700; color: var(--t3);
+      letter-spacing: .08em; text-transform: uppercase;
+      margin-bottom: .85rem;
+    }
+
+    /* ── Player slots ─────────────────────────────────────────────────  */
+    .player-slots { display: flex; flex-direction: column; gap: .7rem; }
+    .player-slot {
+      display: flex; align-items: center; gap: .85rem;
+      padding: .85rem 1rem;
+      border-radius: var(--r-md);
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      transition: border-color .2s, background .2s;
+    }
+    .player-slot.occupied {
+      border-color: rgba(124,109,245,.35);
+      background: var(--primary-dim);
+    }
+    .slot-number {
+      width: 36px; height: 36px; flex-shrink: 0;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .85rem; font-weight: 900;
+      color: var(--t3);
+      transition: border-color .2s, color .2s, box-shadow .2s;
+    }
+    .player-slot.occupied .slot-number {
+      border-color: var(--primary);
+      color: var(--primary);
+      box-shadow: 0 0 12px var(--primary-glow);
+    }
+    .slot-info { flex: 1; min-width: 0; }
+    .slot-name { font-size: .9rem; font-weight: 700; color: var(--t1);
+                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .slot-device { font-size: .72rem; color: var(--t3); margin-top: .1rem; }
+    .slot-time   { font-size: .68rem; color: var(--t3); white-space: nowrap; }
+    .slot-empty  { font-size: .82rem; color: var(--t3); font-style: italic; }
+
+    /* ── ViGEm status ─────────────────────────────────────────────────  */
+    .vigem-row {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .9rem 1rem;
+      border-radius: var(--r-md);
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.03);
+    }
+    .vigem-icon { font-size: 1.5rem; flex-shrink: 0; }
+    .vigem-info { flex: 1; }
+    .vigem-title { font-size: .9rem; font-weight: 700; }
+    .vigem-sub   { font-size: .72rem; color: var(--t3); margin-top: .15rem; }
+    .vigem-row.ok     { border-color: rgba(0,200,83,.35); background: rgba(0,200,83,.06); }
+    .vigem-row.error  { border-color: rgba(255,23,68,.35); background: rgba(255,23,68,.06); }
+    .vigem-row.checking { opacity: .6; }
+    .vigem-action { font-size: .72rem; }
+
+    /* ── Gamepad visualizer ───────────────────────────────────────────  */
+    #pad-select { margin-bottom: 1rem; }
+    .pad-tabs { display: flex; gap: .4rem; margin-bottom: 1.1rem; }
+    .pad-tab {
+      padding: .3rem .8rem;
+      border-radius: var(--r-pill);
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--t3); font-family: inherit;
+      font-size: .72rem; font-weight: 700;
+      cursor: pointer; outline: none;
+      transition: all .15s;
+    }
+    .pad-tab.active { background: var(--primary-dim); color: var(--primary); border-color: rgba(124,109,245,.4); }
+    .pad-tab:disabled { opacity: .3; cursor: not-allowed; }
+
+    /* Buttons grid */
+    .vis-section-label { font-size: .68rem; color: var(--t3); letter-spacing: .06em;
+                         text-transform: uppercase; margin-bottom: .5rem; }
+    .buttons-grid { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1rem; }
+    .vis-btn {
+      min-width: 44px; height: 36px;
+      border-radius: var(--r-sm);
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      color: var(--t2); font-family: inherit;
+      font-size: .72rem; font-weight: 800;
+      padding: 0 .6rem;
+      transition: background .08s, border-color .08s, color .08s, box-shadow .1s;
+    }
+    .vis-btn.on { color: #fff; }
+    .vis-btn[data-btn="A"].on  { background: rgba(0,200,83,.5);   border-color: #00c853; box-shadow: 0 0 10px rgba(0,200,83,.5); }
+    .vis-btn[data-btn="B"].on  { background: rgba(255,23,68,.5);  border-color: #ff1744; box-shadow: 0 0 10px rgba(255,23,68,.5); }
+    .vis-btn[data-btn="X"].on  { background: rgba(41,121,255,.5); border-color: #2979ff; box-shadow: 0 0 10px rgba(41,121,255,.5); }
+    .vis-btn[data-btn="Y"].on  { background: rgba(255,214,0,.5);  border-color: #ffd600; color: #1a1200; box-shadow: 0 0 10px rgba(255,214,0,.5); }
+    .vis-btn.on:not([data-btn="A"]):not([data-btn="B"]):not([data-btn="X"]):not([data-btn="Y"]) {
+      background: var(--primary-dim); border-color: var(--primary);
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    /* Axes bars */
+    .axes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-bottom: 1rem; }
+    .axis-group { }
+    .axis-label { font-size: .68rem; color: var(--t3); margin-bottom: .3rem; }
+    .axis-track {
+      height: 8px; border-radius: 4px;
+      background: rgba(255,255,255,.07);
+      position: relative; overflow: hidden;
+    }
+    .axis-fill {
+      position: absolute; top: 0; bottom: 0;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: 4px;
+      transition: left .05s, width .05s;
+    }
+    .axis-center {
+      position: absolute; top: 0; bottom: 0; width: 2px;
+      left: 50%; background: rgba(255,255,255,.15);
+    }
+
+    /* ── Log ─────────────────────────────────────────────────────────  */
+    .log-area {
+      font-family: 'Courier New', monospace;
+      font-size: .72rem; color: var(--t2);
+      max-height: 160px; overflow-y: auto;
+      line-height: 1.6;
+    }
+    .log-line { margin-bottom: .1rem; }
+    .log-line.info   { color: var(--accent); }
+    .log-line.success{ color: #00e676; }
+    .log-line.warn   { color: #ffd600; }
+    .log-line.error  { color: #ff5252; }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-title">
+        <span style="font-size:1.8rem">🎮</span>
+        <div>
+          <h1>VirtualGamepad Dashboard</h1>
+          <small>PC kontrolör izleme paneli</small>
+        </div>
+      </div>
+      <div class="server-badges">
+        <span class="badge badge-info" id="server-badge">
+          <span class="dot blue" style="width:6px;height:6px"></span>
+          Sunucuya bağlanılıyor…
+        </span>
+        <span class="badge badge-primary" id="player-count-badge">0 / 4 Oyuncu</span>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+
+      <!-- ── Player Slots ──────────────────────────────────────────── -->
+      <div class="card full-width">
+        <div class="section-title">🎮 Bağlı Cihazlar</div>
+        <div class="player-slots" id="player-slots">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- ── ViGEmBus Status ───────────────────────────────────────── -->
+      <div class="card">
+        <div class="section-title">⚙️ ViGEmBus Sürücüsü</div>
+        <div class="vigem-row checking" id="vigem-row">
+          <div class="vigem-icon" id="vigem-icon">⏳</div>
+          <div class="vigem-info">
+            <div class="vigem-title" id="vigem-title">Kontrol ediliyor…</div>
+            <div class="vigem-sub"   id="vigem-sub">Sunucu yanıtı bekleniyor</div>
+          </div>
+          <a class="vigem-action badge badge-primary" id="vigem-link"
+             href="https://github.com/nefarius/ViGEmBus/releases" target="_blank"
+             style="display:none">İndir</a>
+        </div>
+      </div>
+
+      <!-- ── Gamepad Visualizer ────────────────────────────────────── -->
+      <div class="card">
+        <div class="section-title">📊 Gamepad Test (Gamepad API)</div>
+
+        <div class="pad-tabs" id="pad-tabs">
+          <button class="pad-tab active" data-pad="0">P1</button>
+          <button class="pad-tab" data-pad="1" disabled>P2</button>
+          <button class="pad-tab" data-pad="2" disabled>P3</button>
+          <button class="pad-tab" data-pad="3" disabled>P4</button>
+        </div>
+
+        <div class="vis-section-label">Butonlar</div>
+        <div class="buttons-grid" id="buttons-grid">
+          <!-- populated by JS -->
+        </div>
+
+        <div class="vis-section-label">Eksenler &amp; Tetikler</div>
+        <div class="axes-grid" id="axes-grid">
+          <!-- populated by JS -->
+        </div>
+
+        <div id="no-gamepad-msg" style="color:var(--t3); font-size:.8rem; text-align:center; padding:1rem 0;">
+          Henüz gamepad algılanmadı.<br>
+          <small>Mobil cihazdan bağlanın — Windows'ta Xbox kontrolör olarak görünecek.</small>
+        </div>
+      </div>
+
+      <!-- ── Event Log ─────────────────────────────────────────────── -->
+      <div class="card full-width">
+        <div class="section-title">📋 Olay Günlüğü</div>
+        <div class="log-area" id="log-area"></div>
+      </div>
+
+    </div><!-- /.dashboard-grid -->
+  </div><!-- /.page -->
+
+  <script>
+  (() => {
+    'use strict';
+
+    // ── WebSocket observer ──────────────────────────────────────────────────
+    const wsUrl = (() => {
+      const { hostname, port, protocol } = window.location;
+      const p = port ? `:${port}` : '';
+      return `${protocol === 'https:' ? 'wss' : 'ws'}://${hostname}${p}`;
+    })();
+
+    let ws;
+    function connectWS() {
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ type: 'observe' }));
+        setServerBadge('connected');
+        log('Sunucuya bağlandı', 'success');
+      };
+
+      ws.onmessage = (evt) => {
+        const msg = JSON.parse(evt.data);
+        if (msg.type === 'playerList') {
+          renderPlayers(msg.players);
+          updatePlayerCountBadge(msg.players.length);
+          updateViGEm(msg.vigemAvailable);
+        }
+      };
+
+      ws.onclose = () => {
+        setServerBadge('disconnected');
+        log('Sunucu bağlantısı kesildi — 3s sonra yeniden deneniyor…', 'warn');
+        setTimeout(connectWS, 3000);
+      };
+      ws.onerror = () => {};
+    }
+    connectWS();
+
+    // Also poll /api/status once on load for vigem check
+    fetch('/api/status').then(r => r.json()).then(d => {
+      updateViGEm(d.vigemAvailable);
+      renderPlayers(d.players || []);
+      updatePlayerCountBadge((d.players || []).length);
+    }).catch(() => {});
+
+    // ── Player slot rendering ────────────────────────────────────────────────
+    const MAX_PLAYERS = 4;
+    function renderPlayers(players) {
+      const container = document.getElementById('player-slots');
+      container.innerHTML = '';
+
+      const byId = {};
+      for (const p of players) byId[p.id] = p;
+
+      for (let i = 1; i <= MAX_PLAYERS; i++) {
+        const p   = byId[i];
+        const div = document.createElement('div');
+        div.className = 'player-slot' + (p ? ' occupied' : '');
+        div.innerHTML = p
+          ? `<div class="slot-number">P${i}</div>
+             <div class="slot-info">
+               <div class="slot-name">🎮 ${esc(p.name)}</div>
+               <div class="slot-device">📱 ${esc(p.device)}</div>
+             </div>
+             <div class="slot-time">${timeSince(p.connectedAt)}</div>`
+          : `<div class="slot-number" style="opacity:.35">${i}</div>
+             <div class="slot-empty">Boş</div>`;
+        container.appendChild(div);
+      }
+    }
+
+    function updatePlayerCountBadge(count) {
+      document.getElementById('player-count-badge').textContent = `${count} / 4 Oyuncu`;
+    }
+
+    // ── ViGEm status ────────────────────────────────────────────────────────
+    function updateViGEm(available) {
+      const row   = document.getElementById('vigem-row');
+      const icon  = document.getElementById('vigem-icon');
+      const title = document.getElementById('vigem-title');
+      const sub   = document.getElementById('vigem-sub');
+      const link  = document.getElementById('vigem-link');
+
+      row.className = 'vigem-row ' + (available ? 'ok' : 'error');
+
+      if (available) {
+        icon.textContent  = '✅';
+        title.textContent = 'ViGEmBus aktif';
+        sub.textContent   = 'Sanal Xbox kontrolörler oluşturulabilir';
+        link.style.display = 'none';
+        log('ViGEmBus sürücüsü aktif', 'success');
+      } else {
+        icon.textContent  = '❌';
+        title.textContent = 'ViGEmBus bulunamadı';
+        sub.textContent   = 'setup.bat\'ı yönetici olarak çalıştırın';
+        link.style.display = '';
+        log('ViGEmBus sürücüsü eksik — Demo mod', 'warn');
+      }
+    }
+
+    // ── Server badge ─────────────────────────────────────────────────────────
+    function setServerBadge(state) {
+      const badge = document.getElementById('server-badge');
+      const states = {
+        connected:    ['badge-success', '🟢 Sunucu bağlı'],
+        disconnected: ['badge-danger',  '🔴 Sunucu bağlantısı yok']
+      };
+      const [cls, text] = states[state] || ['badge-info', '⏳ Bağlanılıyor…'];
+      badge.className = `badge ${cls}`;
+      badge.textContent = text;
+    }
+
+    // ── Gamepad visualizer (Gamepad API) ─────────────────────────────────────
+    const BUTTON_NAMES = [
+      'A','B','X','Y','LB','RB','LT','RT',
+      'SELECT','START','LS','RS',
+      '↑','↓','←','→'
+    ];
+    const AXIS_NAMES = ['Sol X','Sol Y','Sağ X','Sağ Y'];
+
+    // Build button elements
+    const btnGrid = document.getElementById('buttons-grid');
+    BUTTON_NAMES.forEach(name => {
+      const el = document.createElement('button');
+      el.className = 'vis-btn';
+      el.dataset.btn = name;
+      el.textContent = name;
+      btnGrid.appendChild(el);
+    });
+
+    // Build axis elements
+    const axesGrid = document.getElementById('axes-grid');
+    AXIS_NAMES.forEach(name => {
+      const wrap = document.createElement('div');
+      wrap.className = 'axis-group';
+      wrap.innerHTML = `<div class="axis-label">${name}</div>
+        <div class="axis-track">
+          <div class="axis-center"></div>
+          <div class="axis-fill" style="left:50%;width:0%"></div>
+        </div>`;
+      axesGrid.appendChild(wrap);
+    });
+
+    let activePadIndex = 0;
+    document.querySelectorAll('.pad-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        if (tab.disabled) return;
+        document.querySelectorAll('.pad-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        activePadIndex = parseInt(tab.dataset.pad);
+      });
+    });
+
+    const noGpMsg = document.getElementById('no-gamepad-msg');
+
+    function updateVisualizer() {
+      const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+      const connectedCount = [...gamepads].filter(Boolean).length;
+
+      // Enable/disable tabs
+      document.querySelectorAll('.pad-tab').forEach((tab, i) => {
+        const hasPad = !!gamepads[i];
+        tab.disabled = !hasPad;
+        if (!hasPad && activePadIndex === i && i > 0) activePadIndex = 0;
+      });
+
+      const gp = gamepads[activePadIndex];
+      noGpMsg.style.display = gp ? 'none' : '';
+      if (!gp) return;
+
+      // Buttons
+      document.querySelectorAll('.vis-btn').forEach((el, i) => {
+        const btn = gp.buttons[i];
+        if (!btn) return;
+        const pressed = btn.pressed || btn.value > 0.1;
+        el.classList.toggle('on', pressed);
+      });
+
+      // Axes
+      const fills = axesGrid.querySelectorAll('.axis-fill');
+      gp.axes.forEach((val, i) => {
+        const fill = fills[i];
+        if (!fill) return;
+        // val: -1 to 1 → bar from center
+        if (val >= 0) {
+          fill.style.left  = '50%';
+          fill.style.width = `${val * 50}%`;
+        } else {
+          fill.style.left  = `${50 + val * 50}%`;
+          fill.style.width = `${-val * 50}%`;
+        }
+      });
+    }
+
+    // Gamepad connect events
+    window.addEventListener('gamepadconnected', e => {
+      log(`Gamepad bağlandı: ${e.gamepad.id} (slot ${e.gamepad.index + 1})`, 'success');
+    });
+    window.addEventListener('gamepaddisconnected', e => {
+      log(`Gamepad ayrıldı: slot ${e.gamepad.index + 1}`, 'warn');
+    });
+
+    // Poll at 60fps
+    function loop() {
+      updateVisualizer();
+      requestAnimationFrame(loop);
+    }
+    loop();
+
+    // ── Log helper ───────────────────────────────────────────────────────────
+    const logArea = document.getElementById('log-area');
+    function log(msg, cls = 'info') {
+      const ts  = new Date().toLocaleTimeString('tr-TR', { hour12: false });
+      const div = document.createElement('div');
+      div.className = `log-line ${cls}`;
+      div.textContent = `[${ts}] ${msg}`;
+      logArea.prepend(div);
+      // Keep max 80 lines
+      while (logArea.children.length > 80) logArea.lastChild.remove();
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function esc(s) {
+      return String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+    }
+
+    function timeSince(iso) {
+      const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+      if (diff < 60)   return `${Math.round(diff)}s önce`;
+      if (diff < 3600) return `${Math.round(diff/60)}dk önce`;
+      return `${Math.round(diff/3600)}sa önce`;
+    }
+
+    // Refresh slot timers every 15s
+    setInterval(() => {
+      fetch('/api/status').then(r => r.json()).then(d => {
+        renderPlayers(d.players || []);
+        updatePlayerCountBadge((d.players || []).length);
+      }).catch(() => {});
+    }, 15000);
+
+    log('Dashboard yüklendi', 'info');
+
+  })();
+  </script>
+</body>
+</html>
