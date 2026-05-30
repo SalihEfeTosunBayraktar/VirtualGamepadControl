@@ -16,26 +16,23 @@ try {
   console.warn('  👉 ViGEmBus kurulu mu? setup.bat\'ı yönetici olarak çalıştırın.\n');
 }
 
-// ── Button name mapping (our protocol → vigemclient) ─────────────────────────
+// ── Button name mapping (our protocol → vigemclient XUSB_BUTTON keys) ───────────────
 const BUTTON_MAP = {
-  A:          'A',
-  B:          'B',
-  X:          'X',
-  Y:          'Y',
-  LB:         'leftShoulder',
-  RB:         'rightShoulder',
-  LS:         'leftThumb',
-  RS:         'rightThumb',
-  START:      'start',
-  SELECT:     'back',
-  GUIDE:      'guide',
-  DPAD_UP:    'dpadUp',
-  DPAD_DOWN:  'dpadDown',
-  DPAD_LEFT:  'dpadLeft',
-  DPAD_RIGHT: 'dpadRight'
+  A:      'A',
+  B:      'B',
+  X:      'X',
+  Y:      'Y',
+  LB:     'LEFT_SHOULDER',
+  RB:     'RIGHT_SHOULDER',
+  LS:     'LEFT_THUMB',
+  RS:     'RIGHT_THUMB',
+  START:  'START',
+  SELECT: 'BACK',
+  GUIDE:  'GUIDE',
+  // DPAD is handled separately via dpadHorz/dpadVert axes
 };
 
-// ── Axis name mapping ─────────────────────────────────────────────────────────
+// ── Axis name mapping ──────────────────────────────────────────────────────
 const AXIS_MAP = {
   LX: 'leftX',
   LY: 'leftY',
@@ -43,10 +40,10 @@ const AXIS_MAP = {
   RY: 'rightY'
 };
 
-// ── Trigger name mapping ──────────────────────────────────────────────────────
-const TRIGGER_MAP = {
-  LT: 'left',
-  RT: 'right'
+// Triggers live in ctrl.axis (not a separate ctrl.trigger property)
+const TRIGGER_AXIS_MAP = {
+  LT: 'leftTrigger',
+  RT: 'rightTrigger'
 };
 
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
@@ -154,9 +151,16 @@ class GamepadManager {
       const { buttons, axes, triggers } = input;
 
       if (buttons) {
+        // Face + shoulder + system buttons
         for (const [key, vigemKey] of Object.entries(BUTTON_MAP)) {
           if (key in buttons) ctrl.button[vigemKey].setValue(!!buttons[key]);
         }
+
+        // DPAD → dpadHorz / dpadVert axes (-1, 0, 1)
+        const dpadH = buttons.DPAD_RIGHT ? 1  : buttons.DPAD_LEFT ? -1 : 0;
+        const dpadV = buttons.DPAD_UP    ? 1  : buttons.DPAD_DOWN ? -1 : 0;
+        ctrl.axis.dpadHorz.setValue(dpadH);
+        ctrl.axis.dpadVert.setValue(dpadV);
       }
 
       if (axes) {
@@ -166,8 +170,9 @@ class GamepadManager {
       }
 
       if (triggers) {
-        for (const [key, vigemKey] of Object.entries(TRIGGER_MAP)) {
-          if (key in triggers) ctrl.trigger[vigemKey].setValue(clamp(triggers[key], 0, 1));
+        // Triggers are stored in ctrl.axis, not ctrl.trigger
+        for (const [key, vigemKey] of Object.entries(TRIGGER_AXIS_MAP)) {
+          if (key in triggers) ctrl.axis[vigemKey].setValue(clamp(triggers[key], 0, 1));
         }
       }
     } catch { /* suppress per-frame errors */ }

@@ -26,7 +26,27 @@
     <span id="status-text">Bağlanıyor…</span>
     <span id="latency" class="latency"></span>
     <span id="player-badge" class="player-badge" style="display:none">P?</span>
+    <button id="fullscreen-btn" title="Tam Ekran" aria-label="Tam ekran aç/kapat">⛶</button>
   </div>
+
+  <style>
+    #fullscreen-btn {
+      margin-left: auto;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.18);
+      color: #fff;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 1rem;
+      line-height: 1.4;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background .15s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    #fullscreen-btn:active { background: rgba(255,255,255,.25); }
+  </style>
 
   <!-- ══════════════════════════════════════════════════════════════════════
        XBOX LAYOUT  (default)
@@ -207,24 +227,38 @@
 
     // ── Gyroscope (racing steering) ─────────────────────────────────────────
     const { Sensors } = window.VGC;
-    let gyroEnabled = false;
+    const { setAxis } = window.VGC.Controls;
+    let gyroEnabled  = false;
+    let gyroSmoothed = 0;          // low-pass filter state
 
     async function enableGyro() {
       const result = await Sensors.requestPermission();
       if (result === 'granted') {
-        Sensors.start(({ gamma }) => {
+        Sensors.start(({ beta }) => {
           if (layout !== 'racing') return;
-          const axis = Sensors.gammaToAxis(gamma, 40);
-          window.VGC.Controls.getState().axes.LX = axis; // direct state override
-          // Move steering bar visually
+
+          // In landscape mode, left/right tilt = beta axis (not gamma)
+          // 30° = full lock — more natural steering wheel feel
+          const raw = Sensors.gammaToAxis(beta, 30);
+
+          // Dead zone ±4° → prevents drift when held still
+          const DEAD = 0.07;
+          const dzed = Math.abs(raw) < DEAD ? 0 : (raw - Math.sign(raw) * DEAD) / (1 - DEAD);
+
+          // Exponential low-pass filter — smooths out jitter
+          // alpha=0.12: responsive but no sharp jumps (lower = smoother, more lag)
+          gyroSmoothed = 0.12 * dzed + 0.88 * gyroSmoothed;
+
+          setAxis('LX', gyroSmoothed);
+
           if (steeringBar) {
-            const pct = 50 + axis * 48;
-            steeringBar.style.left = `${pct}%`;
+            steeringBar.style.left = `${50 + gyroSmoothed * 48}%`;
           }
         });
         gyroEnabled = true;
       }
     }
+
 
     // ── Layout switching ────────────────────────────────────────────────────
     function applyLayout(l) {
@@ -295,6 +329,61 @@
       requestAnimationFrame(gameLoop);
     }
     requestAnimationFrame(gameLoop);
+
+    // ── Fullscreen + Orientation Lock ────────────────────────────────────────
+    const fsBtn = document.getElementById('fullscreen-btn');
+
+    async function enterFullscreen() {
+      try {
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+        } else if (document.documentElement.webkitRequestFullscreen) {
+          await document.documentElement.webkitRequestFullscreen();
+        }
+      } catch (_) { /* iOS doesn't support fullscreen API */ }
+
+      // Lock to landscape (works on Android Chrome; silently fails on iOS)
+      try {
+        if (screen.orientation && screen.orientation.lock) {
+          await screen.orientation.lock('landscape');
+        } else if (screen.lockOrientation) {
+          screen.lockOrientation('landscape');
+        }
+      } catch (_) {}
+    }
+
+    async function exitFullscreen() {
+      try {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      } catch (_) {}
+      try {
+        if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+      } catch (_) {}
+    }
+
+    function updateFsIcon() {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      fsBtn.textContent = isFs ? '✕' : '⛶';
+      fsBtn.title = isFs ? 'Tam Ekrandan Çık' : 'Tam Ekran';
+    }
+
+    fsBtn.addEventListener('click', async () => {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      if (isFs) await exitFullscreen();
+      else       await enterFullscreen();
+    });
+
+    document.addEventListener('fullscreenchange',       updateFsIcon);
+    document.addEventListener('webkitfullscreenchange', updateFsIcon);
+
+    // Auto-enter fullscreen + landscape on first touch anywhere
+    let autoFsDone = false;
+    document.addEventListener('touchstart', async () => {
+      if (autoFsDone) return;
+      autoFsDone = true;
+      await enterFullscreen();
+    }, { once: true, passive: true });
 
   })();
   </script>

@@ -445,10 +445,27 @@
 
     // Gamepad connect events
     window.addEventListener('gamepadconnected', e => {
-      log(`Gamepad bağlandı: ${e.gamepad.id} (slot ${e.gamepad.index + 1})`, 'success');
+      log(`Gamepad bağlandı: slot ${e.gamepad.index + 1} — ${e.gamepad.id}`, 'success');
+
+      // Auto-switch to the connected gamepad's tab
+      const tab = document.querySelector(`.pad-tab[data-pad="${e.gamepad.index}"]`);
+      if (tab) {
+        document.querySelectorAll('.pad-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        activePadIndex = e.gamepad.index;
+      }
     });
     window.addEventListener('gamepaddisconnected', e => {
       log(`Gamepad ayrıldı: slot ${e.gamepad.index + 1}`, 'warn');
+      // If active pad disconnected, fall back to first available
+      if (activePadIndex === e.gamepad.index) {
+        const pads = navigator.getGamepads ? [...navigator.getGamepads()] : [];
+        const first = pads.findIndex(Boolean);
+        activePadIndex = first >= 0 ? first : 0;
+        document.querySelectorAll('.pad-tab').forEach((t, i) => {
+          t.classList.toggle('active', i === activePadIndex);
+        });
+      }
     });
 
     // Poll at 60fps

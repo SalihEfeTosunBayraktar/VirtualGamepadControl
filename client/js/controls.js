@@ -46,7 +46,8 @@ window.VGC.Controls = (() => {
   function addRipple(el) {
     const r = document.createElement('div');
     r.className = 'ripple-effect';
-    el.style.position = 'relative';
+    // NOTE: do NOT set el.style.position here — face buttons are position:absolute
+    // and overriding with 'relative' causes layout shifts.
     el.appendChild(r);
     r.addEventListener('animationend', () => r.remove());
   }
@@ -256,7 +257,11 @@ window.VGC.Controls = (() => {
     }
   }
 
-  // ── Public API ────────────────────────────────────────────────────────────
-  return { Joystick, Button, DPad, Trigger, getState, reset };
+  function setAxis(key, value) {
+    if (key in state.axes) state.axes[key] = value;
+  }
+
+  // ── Public API ────────────────────────────────────────────────────────
+  return { Joystick, Button, DPad, Trigger, getState, setAxis, reset };
 
 })();

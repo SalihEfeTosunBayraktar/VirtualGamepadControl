@@ -9,12 +9,12 @@
   },
   "dependencies": {
     "express": "^4.18.2",
-    "ws": "^8.16.0",
     "qrcode": "^1.5.3",
-    "selfsigned": "^2.4.1"
+    "selfsigned": "^2.4.1",
+    "ws": "^8.16.0"
   },
   "optionalDependencies": {
-    "vigemclient": "^1.0.10"
+    "vigemclient": "github:jangxx/node-ViGEmClient"
   },
   "devDependencies": {
     "nodemon": "^3.0.3"

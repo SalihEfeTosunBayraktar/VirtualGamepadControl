@@ -202,3 +202,27 @@ process.on('SIGINT', () => {
   gamepadManager.disconnectAll();
   process.exit(0);
 });
+
+process.on('SIGTERM', () => {
+  console.log('\n  🛑 SIGTERM alındı, kapatılıyor...');
+  gamepadManager.disconnectAll();
+  process.exit(0);
+});
+
+// Ensure ViGEm controllers are freed even on crash
+process.on('uncaughtException', (err) => {
+  console.error('  ❌ İşlenmemiş hata:', err.message);
+  gamepadManager.disconnectAll();
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('  ❌ İşlenmemiş promise red:', reason);
+  gamepadManager.disconnectAll();
+  process.exit(1);
+});
+
+// Synchronous exit handler (runs even after process.exit())
+process.on('exit', () => {
+  try { gamepadManager.disconnectAll(); } catch (_) {}
+});
