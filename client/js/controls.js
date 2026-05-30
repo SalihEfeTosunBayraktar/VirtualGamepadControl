@@ -258,10 +258,18 @@ window.VGC.Controls = (() => {
   }
 
   function setAxis(key, value) {
-    if (key in state.axes) state.axes[key] = value;
+    if (key in state.axes)    state.axes[key]    = value;
+  }
+
+  function setButton(key, value) {
+    if (key in state.buttons) state.buttons[key] = !!value;
+  }
+
+  function setTrigger(key, value) {
+    if (key in state.triggers) state.triggers[key] = Math.min(1, Math.max(0, value));
   }
 
   // ── Public API ────────────────────────────────────────────────────────
-  return { Joystick, Button, DPad, Trigger, getState, setAxis, reset };
+  return { Joystick, Button, DPad, Trigger, getState, setAxis, setButton, setTrigger, reset };
 
 })();

@@ -165,7 +165,13 @@ class GamepadManager {
 
       if (axes) {
         for (const [key, vigemKey] of Object.entries(AXIS_MAP)) {
-          if (key in axes) ctrl.axis[vigemKey].setValue(clamp(axes[key], -1, 1));
+          if (key in axes) {
+            let val = axes[key];
+            // XInput Y axes: positive = up, but touch screen Y increases downward
+            // so we must negate LY and RY to match XInput convention
+            if (key === 'LY' || key === 'RY') val = -val;
+            ctrl.axis[vigemKey].setValue(clamp(val, -1, 1));
+          }
         }
       }
 

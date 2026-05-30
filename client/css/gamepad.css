@@ -295,29 +295,6 @@
 }
 .btn-a.pressed { transform: translateX(-50%) scale(.88); box-shadow: 0 0 18px rgba(0,200,83,.8); }
 
-/* ── FPS layout overrides ─────────────────────────────────────── */
-body.layout-fps .right-area {
-  justify-content: flex-end;
-  padding-bottom: 1rem;
-}
-body.layout-fps .fps-actions {
-  position: fixed; top: 48px; right: 0; left: 50%;
-  display: flex; flex-wrap: wrap; justify-content: flex-end;
-  gap: .5rem; padding: .5rem .6rem;
-}
-.fps-action-btn {
-  min-width: 56px; height: 36px;
-  border-radius: var(--r-md);
-  background: rgba(255,255,255,.08);
-  border: 1px solid var(--border);
-  color: var(--t2); font-family: inherit; font-size: .7rem; font-weight: 700;
-  cursor: pointer; outline: none;
-  display: flex; align-items: center; justify-content: center;
-  padding: 0 .6rem;
-  touch-action: none;
-  transition: background .08s, transform .08s;
-}
-.fps-action-btn.pressed { background: rgba(124,109,245,.4); border-color: var(--primary); transform: scale(.93); }
 
 /* ── Racing layout ────────────────────────────────────────────── */
 .racing-root {

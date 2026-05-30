@@ -112,30 +112,18 @@
 
   </div><!-- /#gamepad-root -->
 
-  <!-- ── Layout switcher (floating bottom) ───────────────────────────────── -->
+  <!-- ── Layout switcher (floating bottom) ────────────────────────────── -->
   <div id="layout-switcher">
     <button class="layout-tab active" data-layout="xbox">🎮 Xbox</button>
-    <button class="layout-tab"        data-layout="fps">🔫 FPS</button>
     <button class="layout-tab"        data-layout="racing">🏎️ Yarış</button>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════════════════
-       FPS OVERLAY  (hidden until layout-fps)
-  ══════════════════════════════════════════════════════════════════════════ -->
-  <div id="fps-overlay" style="display:none; position:fixed; inset:0; z-index:50; pointer-events:none;">
-    <div class="fps-actions" style="pointer-events:all;">
-      <button class="fps-action-btn" id="fps-reload">🔄 Şarjör</button>
-      <button class="fps-action-btn" id="fps-crouch">⬇️ Çömel</button>
-      <button class="fps-action-btn" id="fps-jump">⬆️ Zıpla</button>
-      <button class="fps-action-btn" id="fps-melee">⚔️ Yakın</button>
-    </div>
-  </div>
 
   <!-- ══════════════════════════════════════════════════════════════════════
        RACING OVERLAY  (hidden until layout-racing)
   ══════════════════════════════════════════════════════════════════════════ -->
-  <div id="racing-overlay" style="display:none; position:fixed; inset:36px 0 0; z-index:50;">
-    <div class="racing-root">
+  <div id="racing-overlay" style="display:none; position:fixed; inset:36px 0 0; z-index:50; pointer-events:none;">
+    <div class="racing-root" style="pointer-events:none;">
       <div>
         <div class="steering-indicator" id="steering-indicator">
           <div class="steering-center-mark"></div>
@@ -144,19 +132,53 @@
         <div class="steering-label">📱 Telefonu eğerek yönlendirin</div>
       </div>
 
-      <div class="racing-pedals">
-        <button class="pedal-btn handbrake" id="racing-hb">
-          <span class="pedal-icon">🅿️</span>El Freni
+      <div class="racing-pedals" style="pointer-events:auto;">
+        <button class="pedal-btn handbrake" id="racing-hb"
+                style="touch-action:none;user-select:none;-webkit-user-select:none;">
+          <span class="pedal-icon">🅿️</span>
+          <span class="pedal-label">El Freni</span>
+          <span class="pedal-mapping" id="hb-mapping-label"></span>
         </button>
-        <button class="pedal-btn gas"   id="racing-gas">
-          <span class="pedal-icon">⚡</span>GAZ
+        <button class="pedal-btn gas" id="racing-gas"
+                style="touch-action:none;user-select:none;-webkit-user-select:none;">
+          <span class="pedal-icon">⚡</span>
+          <span class="pedal-label">GAZ</span>
+          <span class="pedal-mapping" id="gas-mapping-label"></span>
         </button>
-        <button class="pedal-btn brake" id="racing-brake">
-          <span class="pedal-icon">🛑</span>FREN
+        <button class="pedal-btn brake" id="racing-brake"
+                style="touch-action:none;user-select:none;-webkit-user-select:none;">
+          <span class="pedal-icon">🛑</span>
+          <span class="pedal-label">FREN</span>
+          <span class="pedal-mapping" id="brake-mapping-label"></span>
         </button>
       </div>
+
+      <!-- Pedal settings gear button -->
+      <button id="pedal-settings-btn" title="Pedal tuş ayarları"
+              style="pointer-events:auto;position:absolute;top:.5rem;right:.5rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:8px;padding:.3rem .55rem;font-size:1rem;cursor:pointer;z-index:10;touch-action:none;">⚙️</button>
     </div>
   </div>
+
+  <!-- Pedal mapping modal -->
+  <div id="pedal-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);align-items:flex-end;justify-content:center;">
+    <div style="width:100%;max-width:480px;background:#13131f;border:1px solid rgba(255,255,255,.12);border-radius:18px 18px 0 0;padding:1.5rem 1.25rem 2rem;">
+      <div style="font-size:1rem;font-weight:800;text-align:center;margin-bottom:1.25rem;color:#fff;">🏎️ Pedal Tuş Ayarları</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.07);">
+        <label style="font-size:.85rem;font-weight:700;color:rgba(255,255,255,.75)">⚡ GAZ</label>
+        <select id="sel-gas" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:8px;padding:.4rem .75rem;font-size:.85rem;font-weight:700;"></select>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.07);">
+        <label style="font-size:.85rem;font-weight:700;color:rgba(255,255,255,.75)">🛑 FREN</label>
+        <select id="sel-brake" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:8px;padding:.4rem .75rem;font-size:.85rem;font-weight:700;"></select>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.07);">
+        <label style="font-size:.85rem;font-weight:700;color:rgba(255,255,255,.75)">🅿️ EL FRENİ</label>
+        <select id="sel-hb" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:8px;padding:.4rem .75rem;font-size:.85rem;font-weight:700;"></select>
+      </div>
+      <button id="pedal-sheet-ok" style="width:100%;margin-top:1rem;padding:.75rem;background:rgba(124,109,245,.5);border:none;border-radius:10px;color:#fff;font-size:1rem;font-weight:800;cursor:pointer;">Tamam</button>
+    </div>
+  </div>
+
 
   <!-- ── Scripts ─────────────────────────────────────────────────────────── -->
   <script src="js/vibration.js"></script>
@@ -182,7 +204,7 @@
     const steeringBar= document.getElementById('steering-bar');
 
     // ── Controls wiring ─────────────────────────────────────────────────────
-    const { Joystick, Button, DPad, Trigger, getState } = window.VGC.Controls;
+    const { Joystick, Button, DPad, Trigger, getState, setAxis, setButton, setTrigger } = window.VGC.Controls;
 
     const leftStick  = new Joystick(
       document.getElementById('left-stick'),
@@ -208,26 +230,118 @@
       ['view-btn','SELECT'], ['menu-btn','START'], ['guide-btn','GUIDE']
     ].forEach(([id, key]) => new Button(document.getElementById(id), key));
 
-    // FPS actions → mapped to face buttons
-    [ ['fps-reload','X'], ['fps-crouch','B'], ['fps-jump','A'], ['fps-melee','Y']
-    ].forEach(([id, key]) => {
-      const el = document.getElementById(id);
-      if (el) new Button(el, key);
-    });
 
-    // Racing pedals
-    [ ['racing-gas','RT'], ['racing-brake','LT'] ].forEach(([id, key]) => {
+    // ── Racing pedal mapping ─────────────────────────────────────────────────
+    const PEDAL_OPTIONS = [
+      { value: 'RT',  label: 'RT — Sağ Tetik' },
+      { value: 'LT',  label: 'LT — Sol Tetik' },
+      { value: 'A',   label: 'A' },
+      { value: 'B',   label: 'B' },
+      { value: 'X',   label: 'X' },
+      { value: 'Y',   label: 'Y' },
+      { value: 'RB',  label: 'RB' },
+      { value: 'LB',  label: 'LB' },
+      { value: 'START',  label: 'Start' },
+      { value: 'SELECT', label: 'Select' },
+    ];
+    const TRIGGER_KEYS = new Set(['RT', 'LT']);
+    const PEDAL_MAP_KEY = 'vgc-pedal-map';
+    const DEFAULT_MAP   = { gas: 'RT', brake: 'LT', handbrake: 'A' };
+
+    function loadPedalMap() {
+      try { return { ...DEFAULT_MAP, ...JSON.parse(localStorage.getItem(PEDAL_MAP_KEY)) }; }
+      catch { return { ...DEFAULT_MAP }; }
+    }
+    function savePedalMap(m) { localStorage.setItem(PEDAL_MAP_KEY, JSON.stringify(m)); }
+    let pedalMap = loadPedalMap();
+
+    function pressInput(key) {
+      if (TRIGGER_KEYS.has(key)) setTrigger(key, 1);
+      else setButton(key, true);
+    }
+    function releaseInput(key) {
+      if (TRIGGER_KEYS.has(key)) setTrigger(key, 0);
+      else setButton(key, false);
+    }
+
+    const pedalListeners = new Map();
+    function bindPedal(id, getKey) {
       const el = document.getElementById(id);
       if (!el) return;
-      el.addEventListener('touchstart',  e => { e.preventDefault(); el.classList.add('pressed'); }, { passive:false });
-      el.addEventListener('touchend',    e => { e.preventDefault(); el.classList.remove('pressed'); }, { passive:false });
-    });
-    const racingHb = document.getElementById('racing-hb');
-    if (racingHb) new Button(racingHb, 'A');
+
+      // Remove previous listeners
+      const prev = pedalListeners.get(id);
+      if (prev) {
+        el.removeEventListener('pointerdown',   prev.down);
+        el.removeEventListener('pointerup',     prev.up);
+        el.removeEventListener('pointercancel', prev.up);
+      }
+
+      const down = e => {
+        e.preventDefault();
+        try { el.setPointerCapture(e.pointerId); } catch(_) {}
+        el.classList.add('pressed');
+        const key = getKey();
+        if (TRIGGER_KEYS.has(key)) setTrigger(key, 1);
+        else setButton(key, true);
+      };
+      const up = e => {
+        el.classList.remove('pressed');
+        const key = getKey();
+        if (TRIGGER_KEYS.has(key)) setTrigger(key, 0);
+        else setButton(key, false);
+      };
+
+      pedalListeners.set(id, { down, up });
+      el.addEventListener('pointerdown',   down);
+      el.addEventListener('pointerup',     up);
+      el.addEventListener('pointercancel', up);
+    }
+
+    function applyPedalMap() {
+      bindPedal('racing-gas',   () => pedalMap.gas);
+      bindPedal('racing-brake', () => pedalMap.brake);
+      bindPedal('racing-hb',    () => pedalMap.handbrake);
+      const gl = document.getElementById('gas-mapping-label');
+      const bl = document.getElementById('brake-mapping-label');
+      const hl = document.getElementById('hb-mapping-label');
+      if (gl) gl.textContent = pedalMap.gas;
+      if (bl) bl.textContent = pedalMap.brake;
+      if (hl) hl.textContent = pedalMap.handbrake;
+    }
+    applyPedalMap();
+
+    // ── Pedal settings modal ───────────────────────────────────────────────
+    const selGas   = document.getElementById('sel-gas');
+    const selBrake = document.getElementById('sel-brake');
+    const selHb    = document.getElementById('sel-hb');
+    if (selGas && selBrake && selHb) {
+      [selGas, selBrake, selHb].forEach(sel => {
+        PEDAL_OPTIONS.forEach(opt => {
+          const o = document.createElement('option');
+          o.value = opt.value; o.textContent = opt.label;
+          sel.appendChild(o);
+        });
+      });
+      selGas.value   = pedalMap.gas;
+      selBrake.value = pedalMap.brake;
+      selHb.value    = pedalMap.handbrake;
+
+      const pedalModal = document.getElementById('pedal-modal');
+      const settingsBtn = document.getElementById('pedal-settings-btn');
+      if (settingsBtn) settingsBtn.addEventListener('click', () => { pedalModal.style.display = 'flex'; });
+      document.getElementById('pedal-sheet-ok').addEventListener('click', () => {
+        pedalMap = { gas: selGas.value, brake: selBrake.value, handbrake: selHb.value };
+        savePedalMap(pedalMap);
+        applyPedalMap();
+        pedalModal.style.display = 'none';
+      });
+      pedalModal.addEventListener('click', e => { if (e.target === pedalModal) pedalModal.style.display = 'none'; });
+    }
+
 
     // ── Gyroscope (racing steering) ─────────────────────────────────────────
     const { Sensors } = window.VGC;
-    const { setAxis } = window.VGC.Controls;
     let gyroEnabled  = false;
     let gyroSmoothed = 0;          // low-pass filter state
 
@@ -260,25 +374,22 @@
     }
 
 
-    // ── Layout switching ────────────────────────────────────────────────────
+    // ── Layout switching ────────────────────────────────────────────────
     function applyLayout(l) {
       layout = l;
-
-      // Update tab UI
       document.querySelectorAll('.layout-tab').forEach(t =>
         t.classList.toggle('active', t.dataset.layout === l)
       );
 
-      // Show/hide overlays
-      document.getElementById('fps-overlay').style.display    = (l === 'fps')    ? '' : 'none';
-      document.getElementById('racing-overlay').style.display = (l === 'racing') ? '' : 'none';
+      const racingOverlay = document.getElementById('racing-overlay');
+      if (racingOverlay) racingOverlay.style.display = (l === 'racing') ? '' : 'none';
 
-      // Racing needs gyro
+      // In racing mode: hide only left joystick (gyro steers instead)
+      // All other buttons remain fully visible and interactive
+      const leftStick = document.getElementById('left-stick');
+      if (leftStick) leftStick.style.visibility = (l === 'racing') ? 'hidden' : '';
+
       if (l === 'racing' && !gyroEnabled) enableGyro();
-
-      // Show/hide gamepad root elements based on layout
-      const root = document.getElementById('gamepad-root');
-      root.style.opacity = (l === 'racing') ? '0.3' : '1';
     }
 
     document.querySelectorAll('.layout-tab').forEach(tab => {
