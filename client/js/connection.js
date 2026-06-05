@@ -5,8 +5,9 @@
  *  - Open / maintain WebSocket connection to the server
  *  - Auto-reconnect with exponential back-off
  *  - Send the registration handshake (name + device)
+ *  - Ping/pong heartbeat for latency measurement
  *  - Expose a typed send() helper
- *  - Emit events: onConnected, onDisconnected, onVibration, onStatus, onError
+ *  - Emit events: onConnected, onDisconnected, onVibration, onStatus, onLatency, onError
  */
 
 'use strict';   // parsed as a module script — no actual strict-mode header needed
@@ -18,10 +19,12 @@ window.VGC.Connection = (() => {
   let playerId     = null;
   let retries      = 0;
   let retryTimer   = null;
+  let pingInterval = null;
   let intentional  = false;   // true when we called disconnect() ourselves
 
   const MAX_RETRIES   = 10;
   const BASE_DELAY_MS = 1000;
+  const PING_INTERVAL = 5000;  // ms
 
   // ── Callbacks (set by consumer) ─────────────────────────────────────────────
   const cb = {
@@ -29,6 +32,7 @@ window.VGC.Connection = (() => {
     onDisconnected: ()    => {},
     onVibration:    (large, small) => {},
     onStatus:       (count, max)   => {},
+    onLatency:      (ms)           => {},
     onError:        (msg) => {}
   };
 
@@ -55,6 +59,7 @@ window.VGC.Connection = (() => {
 
   function _openSocket(url, profile) {
     if (ws) { ws.onclose = null; ws.close(); }
+    _stopPing();
 
     ws = new WebSocket(url);
 
@@ -63,6 +68,7 @@ window.VGC.Connection = (() => {
       // Send registration handshake
       _send({ type: 'register', name: profile.name, device: profile.device });
       console.log('[VGC] WS connected, registering…');
+      _startPing();
     };
 
     ws.onmessage = (evt) => {
@@ -84,6 +90,12 @@ window.VGC.Connection = (() => {
           cb.onStatus(msg.playerCount, msg.maxPlayers);
           break;
 
+        case 'pong': {
+          const rtt = Date.now() - msg.ts;
+          cb.onLatency(rtt);
+          break;
+        }
+
         case 'error':
           cb.onError(msg.message);
           console.warn('[VGC] Server error:', msg.message);
@@ -93,6 +105,7 @@ window.VGC.Connection = (() => {
 
     ws.onclose = () => {
       playerId = null;
+      _stopPing();
       cb.onDisconnected();
 
       if (!intentional && retries < MAX_RETRIES) {
@@ -100,6 +113,10 @@ window.VGC.Connection = (() => {
         retries++;
         console.log(`[VGC] WS closed — retry ${retries} in ${Math.round(delay)}ms`);
         retryTimer = setTimeout(() => _openSocket(url, profile), delay);
+      } else if (!intentional) {
+        // Max retries exceeded — notify user
+        cb.onError('Sunucuya bağlanılamadı. Sayfayı yenileyin.');
+        console.error('[VGC] Max retries exceeded.');
       }
     };
 
@@ -108,10 +125,23 @@ window.VGC.Connection = (() => {
     };
   }
 
+  // ── Ping loop ─────────────────────────────────────────────────────────────
+  function _startPing() {
+    _stopPing();
+    pingInterval = setInterval(() => {
+      _send({ type: 'ping', ts: Date.now() });
+    }, PING_INTERVAL);
+  }
+
+  function _stopPing() {
+    if (pingInterval) { clearInterval(pingInterval); pingInterval = null; }
+  }
+
   // ── Disconnect ────────────────────────────────────────────────────────────
   function disconnect() {
     intentional = true;
     clearTimeout(retryTimer);
+    _stopPing();
     if (ws) ws.close();
     ws = null;
   }
@@ -143,6 +173,8 @@ window.VGC.Connection = (() => {
     onDisconnected: (fn) => { cb.onDisconnected = fn; },
     onVibration:    (fn) => { cb.onVibration    = fn; },
     onStatus:       (fn) => { cb.onStatus       = fn; },
+    onLatency:      (fn) => { cb.onLatency      = fn; },
     onError:        (fn) => { cb.onError        = fn; }
   };
 })();
+

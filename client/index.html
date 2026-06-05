@@ -51,7 +51,7 @@
     /* ── Layout cards ───────────────────────────────────────── */
     .layout-title { font-size: .8rem; font-weight: 700; color: var(--t2);
                     letter-spacing: .06em; text-transform: uppercase; margin-bottom: .75rem; }
-    .layout-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .7rem; }
+    .layout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; }
     .layout-card {
       border: 2px solid var(--border);
       border-radius: var(--r-lg);
@@ -106,7 +106,7 @@
     <div class="card form-card">
       <div class="form-group">
         <label for="player-name">Oyuncu Adı</label>
-        <input type="text" id="player-name" placeholder="Salih" maxlength="24" autocomplete="off" autocorrect="off" spellcheck="false">
+        <input type="text" id="player-name" placeholder="Oyuncu 1" maxlength="24" autocomplete="off" autocorrect="off" spellcheck="false">
       </div>
 
       <div class="form-group">
@@ -117,12 +117,6 @@
             <div class="layout-icon">🎮</div>
             <div class="layout-name">Xbox</div>
             <div class="layout-desc">A B X Y + 2 joystick + D-Pad</div>
-          </div>
-
-          <div class="layout-card" data-layout="fps" id="card-fps">
-            <div class="layout-icon">🔫</div>
-            <div class="layout-name">FPS</div>
-            <div class="layout-desc">Büyük sol stick + aksiyon tuşları</div>
           </div>
 
           <div class="layout-card" data-layout="racing" id="card-racing">

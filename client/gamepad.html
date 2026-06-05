@@ -353,7 +353,7 @@
 
           // In landscape mode, left/right tilt = beta axis (not gamma)
           // 30° = full lock — more natural steering wheel feel
-          const raw = Sensors.gammaToAxis(beta, 30);
+          const raw = Sensors.tiltToAxis(beta, 30);
 
           // Dead zone ±4° → prevents drift when held still
           const DEAD = 0.07;
@@ -398,21 +398,70 @@
 
     applyLayout(layout);
 
+    // ── Wake Lock (ekranın kararmasını engelle) ───────────────────────────────
+    let wakeLock = null;
+
+    async function requestWakeLock() {
+      if (!('wakeLock' in navigator)) return;
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        console.log('[VGC] Wake Lock aktif — ekran kapanmaz');
+        wakeLock.addEventListener('release', () => {
+          console.log('[VGC] Wake Lock serbest bırakıldı');
+          wakeLock = null;
+        });
+      } catch (e) {
+        console.warn('[VGC] Wake Lock başarısız:', e.message);
+      }
+    }
+
+    // Sayfa görünür olduğunda Wake Lock'u yeniden al (sekme değiştirilince otomatik serbest bırakılıyor)
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible' && wakeLock === null) {
+        await requestWakeLock();
+      }
+    });
+
+    // ── Orientation Lock (landscape modunu kilitle) ───────────────────────────
+    async function lockLandscape() {
+      try {
+        if (screen.orientation && screen.orientation.lock) {
+          await screen.orientation.lock('landscape');
+          console.log('[VGC] Orientation landscape\'e kilitlendi');
+        }
+      } catch (e) {
+        // iOS fullscreen gerektirdiğinden sessizce geç
+        console.warn('[VGC] Orientation lock başarısız:', e.message);
+      }
+    }
+
     // ── Connection ──────────────────────────────────────────────────────────
     const { Connection } = window.VGC;
 
-    Connection.onConnected(pid => {
+    Connection.onConnected(async pid => {
       statusDot.className  = 'dot green';
       statusText.textContent = `${name} — Bağlı`;
       playerBadge.style.display = '';
       playerBadge.textContent   = `P${pid}`;
       window.VGC.Vibration.pulse(60);
+      // Bağlantı kurulunca (kullanıcı etkileşimi sonrası) kilitleri etkinleştir
+      await requestWakeLock();
+      await lockLandscape();
     });
 
     Connection.onDisconnected(() => {
       statusDot.className  = 'dot red';
       statusText.textContent = 'Bağlantı kesildi — yeniden deneniyor…';
       playerBadge.style.display = 'none';
+    });
+
+    Connection.onLatency(ms => {
+      latencyEl.textContent = `${ms}ms`;
+    });
+
+    Connection.onError(msg => {
+      statusDot.className    = 'dot red';
+      statusText.textContent = msg;
     });
 
     Connection.onVibration((large, small) => {

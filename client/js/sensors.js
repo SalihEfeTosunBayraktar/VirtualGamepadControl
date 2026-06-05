@@ -91,17 +91,18 @@ window.VGC.Sensors = (() => {
     if (a) { _ax = a.x ?? 0; _ay = a.y ?? 0; _az = a.z ?? 0; }
   }
 
-  // ── Utility: map gamma to gamepad axis (-1 to 1) ──────────────────────────
+  // ── Utility: map device tilt angle to gamepad axis (-1 to 1) ────────────
   /**
-   * Maps device tilt (gamma, -90°…+90°) to a normalised axis value.
+   * Maps a device tilt angle (degrees) to a normalised axis value.
+   * Works with both beta (-180°…+180°) and gamma (-90°…+90°) axes.
    * `maxDeg` = tilt angle that corresponds to ±1.0 (default 45°)
-   * @param {number} gamma
+   * @param {number} angle — tilt in degrees (beta or gamma)
    * @param {number} [maxDeg=45]
    * @returns {number}
    */
-  function gammaToAxis(gamma, maxDeg = 45) {
-    return Math.min(1, Math.max(-1, gamma / maxDeg));
+  function tiltToAxis(angle, maxDeg = 45) {
+    return Math.min(1, Math.max(-1, angle / maxDeg));
   }
 
-  return { requestPermission, start, stop, isActive, gammaToAxis };
+  return { requestPermission, start, stop, isActive, tiltToAxis };
 })();

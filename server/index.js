@@ -111,6 +111,12 @@ wss.on('connection', (ws, req) => {
         safeSend(ws, { type: 'playerList', players: getPlayerList(), vigemAvailable: gamepadManager.isAvailable() });
         break;
       }
+
+      /* ── Ping / pong (latency heartbeat) ── */
+      case 'ping': {
+        safeSend(ws, { type: 'pong', ts: msg.ts });
+        break;
+      }
     }
   });
 
